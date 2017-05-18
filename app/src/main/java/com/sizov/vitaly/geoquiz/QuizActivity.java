@@ -1,5 +1,7 @@
 package com.sizov.vitaly.geoquiz;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,9 +15,11 @@ public class QuizActivity extends AppCompatActivity {
 
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final int REQUEST_CODE_CHEAT = 0;
 
     private Button mTrueButton;
     private Button mFalseButton;
+    private Button mCheatButton;
     private ImageButton mNextButton;
     private ImageButton mPrevButton;
     private TextView mQuestionTextView;
@@ -29,21 +33,27 @@ public class QuizActivity extends AppCompatActivity {
     };
 
     private int mCurrentIndex = 0; // начальный индекс вопроса
+    private boolean mIsCheater;
 
     private void updateQuestion() {
         int question = mQuestionsBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
     }
 
-    private void checkAnswer(boolean userPressedTrue) { // Проверка ответа
+    // Проверка ответа
+    private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionsBank[mCurrentIndex].isAnswerTrue();
 
         int messageResId = 0;
 
-        if (userPressedTrue == answerIsTrue) {
-            messageResId = R.string.correct_toast;
+        if (mIsCheater) {
+            messageResId = R.string.judgment_toast;
         } else {
-            messageResId = R.string.incorrect_toast;
+            if (userPressedTrue == answerIsTrue) {
+                messageResId = R.string.correct_toast;
+            } else {
+                messageResId = R.string.incorrect_toast;
+            }
         }
 
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
@@ -66,8 +76,9 @@ public class QuizActivity extends AppCompatActivity {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
         }
 
+        // Переход к следующему вопросу (нажатие по TextView)
         mQuestionTextView = (TextView)findViewById(R.id.question_text_view);
-        mQuestionTextView.setOnClickListener(new View.OnClickListener() { // К следующему вопросу
+        mQuestionTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionTextView.length();
@@ -91,16 +102,30 @@ public class QuizActivity extends AppCompatActivity {
             }
         });
 
-        mNextButton = (ImageButton) findViewById(R.id.next_button); // Следующий вопрос
+        // Переход к активности подсказки
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean answerIsTrue = mQuestionsBank[mCurrentIndex].isAnswerTrue();
+                Intent i = CheatActivity.newIntent(QuizActivity.this, answerIsTrue);
+                startActivityForResult(i, REQUEST_CODE_CHEAT);
+            }
+        });
+
+        // Следующий вопрос
+        mNextButton = (ImageButton) findViewById(R.id.next_button);
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionTextView.length();
+                mIsCheater = false;
                 updateQuestion();
             }
         });
 
-        mPrevButton = (ImageButton) findViewById(R.id.prev_button); // Предыдущий вопрос
+        // Предыдущий вопрос
+        mPrevButton = (ImageButton) findViewById(R.id.prev_button);
         mPrevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -110,6 +135,19 @@ public class QuizActivity extends AppCompatActivity {
         });
 
         updateQuestion();
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
     }
 
     @Override
