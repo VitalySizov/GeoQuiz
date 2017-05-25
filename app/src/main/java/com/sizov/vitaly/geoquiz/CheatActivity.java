@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -12,7 +13,10 @@ public class CheatActivity extends AppCompatActivity {
 
     public static final String EXTRA_ANSWER_IS_TRUE = "com.sizov.vitaly.geoquiz.answer_is_true";
     public static final String EXTRA_ANSWER_SHOWN = "com.sizov.vitaly.geoquiz.answer_shown";
+    private static final String KEY_CHEATED = "cheated";
+    private static final String TAG = "CheatActivity";
     private boolean mAnswerIsTrue;
+    private boolean mShowAnswerPressed;
     private TextView mAnswerTextView;
     private Button mShowAnswer;
 
@@ -24,7 +28,17 @@ public class CheatActivity extends AppCompatActivity {
 
     // декодирование интента результата
     public static boolean wasAnswerShown(Intent result) {
+        if (result.getBooleanExtra(KEY_CHEATED, false)) {
+            return true;
+        }
         return result.getBooleanExtra(EXTRA_ANSWER_SHOWN, false);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.i(TAG, "onSaveInstanceState() called");
+        outState.putBoolean(KEY_CHEATED, mShowAnswerPressed);
     }
 
     @Override
@@ -33,6 +47,11 @@ public class CheatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cheat);
         mAnswerIsTrue = getIntent().getBooleanExtra(EXTRA_ANSWER_IS_TRUE, false);
         mAnswerTextView = (TextView) findViewById(R.id.answer_text_view);
+
+        if (savedInstanceState != null) {
+            mShowAnswerPressed = savedInstanceState.getBoolean(KEY_CHEATED);
+            setAnswerShownResult(mShowAnswerPressed);
+        }
 
         mShowAnswer = (Button)findViewById(R.id.show_answer_button);
         mShowAnswer.setOnClickListener(new View.OnClickListener() {
@@ -43,6 +62,7 @@ public class CheatActivity extends AppCompatActivity {
                 } else {
                     mAnswerTextView.setText(R.string.false_button);
                 }
+                mShowAnswerPressed = true;
                 setAnswerShownResult(true);
             }
         });
