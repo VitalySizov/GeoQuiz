@@ -122,7 +122,7 @@ public class QuizActivity extends AppCompatActivity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCurrentIndex = (mCurrentIndex + 1) % mQuestionTextView.length();
+                mCurrentIndex = ((mCurrentIndex + 1) % mQuestionsBank.length);
                 mIsCheater = false;
                 updateQuestion();
             }
@@ -133,7 +133,10 @@ public class QuizActivity extends AppCompatActivity {
         mPrevButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCurrentIndex = (mCurrentIndex - 1) % mQuestionTextView.length();
+                mCurrentIndex = ((mCurrentIndex - 1) % mQuestionsBank.length);
+                if (mCurrentIndex < 0) {
+                    mCurrentIndex = 0;
+                }
                 updateQuestion();
             }
         });
