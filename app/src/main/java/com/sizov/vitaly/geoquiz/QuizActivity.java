@@ -35,7 +35,15 @@ public class QuizActivity extends AppCompatActivity {
     };
 
     private int mCurrentIndex = 0; // начальный индекс вопроса
-    private boolean mIsCheater;
+
+    // Массив для хранения подсмотренных вопросов
+    private boolean[] mWasCheated = new boolean[] {
+            false,
+            false,
+            false,
+            false,
+            false,
+    };
 
     private void updateQuestion() {
         int question = mQuestionsBank[mCurrentIndex].getTextResId();
@@ -48,7 +56,8 @@ public class QuizActivity extends AppCompatActivity {
 
         int messageResId = 0;
 
-        if (mIsCheater) {
+        // Проверка, был ли вопрос подсмотрен ранее
+        if (mWasCheated[mCurrentIndex]) {
             messageResId = R.string.judgment_toast;
         } else {
             if (userPressedTrue == answerIsTrue) {
@@ -66,7 +75,7 @@ public class QuizActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         Log.i(TAG, "onSaveInstanceState");
         outState.putInt(KEY_INDEX, mCurrentIndex);
-        outState.putBoolean(KEY_CHEATER, mIsCheater);
+        outState.putBooleanArray(KEY_CHEATER, mWasCheated);
     }
 
     @Override
@@ -77,7 +86,7 @@ public class QuizActivity extends AppCompatActivity {
 
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
-            mIsCheater = savedInstanceState.getBoolean(KEY_CHEATER, false);
+            mWasCheated = savedInstanceState.getBooleanArray(KEY_CHEATER);
         }
 
         // Переход к следующему вопросу (нажатие по TextView)
@@ -123,7 +132,6 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 mCurrentIndex = ((mCurrentIndex + 1) % mQuestionsBank.length);
-                mIsCheater = false;
                 updateQuestion();
             }
         });
@@ -144,6 +152,7 @@ public class QuizActivity extends AppCompatActivity {
         updateQuestion();
     }
 
+    // Обработка результата
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK) {
             return;
@@ -153,8 +162,8 @@ public class QuizActivity extends AppCompatActivity {
             if (data == null) {
                 return;
             }
-            mIsCheater = CheatActivity.wasAnswerShown(data);
         }
+        mWasCheated[mCurrentIndex] = data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false);
     }
 
     @Override
